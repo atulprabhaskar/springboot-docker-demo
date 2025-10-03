@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-docker-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: springboot-docker-demo
+  template:
+    metadata:
+      labels:
+        app: springboot-docker-demo
+    spec:
+      containers:
+        - name: springboot-docker-demo
+          image: atul1972/springboot-docker-demo:1.0
+          ports:
+            - containerPort: 9092   # must match Dockerfile EXPOSE / app port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-docker-demo-service
+spec:
+  type: NodePort
+  selector:
+    app: springboot-docker-demo
+  ports:
+    - port: 9092         # service port inside cluster
+      targetPort: 8080   # container port
+      nodePort: 30092    # external access on localhost
