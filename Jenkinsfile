@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/atulprabhaskar/springboot-docker-demo.git'
+                git url: 'https://github.com/atulprabhaskar/springboot-docker-demo.git', branch: 'main'
             }
         }
 
