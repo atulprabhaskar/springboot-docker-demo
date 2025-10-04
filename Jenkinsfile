@@ -7,7 +7,7 @@ pipeline {
 
     options {
         timestamps()
-        ansiColor('xterm')
+        // removed ansiColor from here
     }
 
     stages {
@@ -22,14 +22,18 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 echo '📦 Running Maven clean package...'
-                sh 'mvn clean package -DskipTests=false'
+                ansiColor('xterm') {
+                    sh 'mvn clean package -DskipTests=false'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo "🐳 Building Docker image: ${env.DOCKER_IMAGE}"
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                ansiColor('xterm') {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
             }
         }
 
@@ -46,10 +50,12 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 echo '🚀 Running Docker container...'
-                sh '''
-                    docker rm -f springboot-demo || true
-                    docker run -d -p 9000:8080 --name springboot-demo springboot-docker-demo:latest
-                '''
+                ansiColor('xterm') {
+                    sh '''
+                        docker rm -f springboot-demo || true
+                        docker run -d -p 9000:8080 --name springboot-demo springboot-docker-demo:latest
+                    '''
+                }
             }
         }
     }
