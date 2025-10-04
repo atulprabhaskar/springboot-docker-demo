@@ -1,40 +1,68 @@
 pipeline {
-    agent any
+    agent { label 'docker' } // This is the label of your Docker VM agent
 
-    tools {
-        maven 'Maven3'   // Make sure Maven3 is installed in Jenkins (Manage Jenkins → Global Tool Config)
-        jdk 'JDK17'      // Ensure JDK 17 is configured in Jenkins (same place)
+    environment {
+        DOCKER_IMAGE = 'springboot-docker-demo:latest'
+    }
+
+    options {
+        timestamps()
+        ansiColor('xterm')
     }
 
     stages {
-        stage('Checkout') {
+
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/atulprabhaskar/springboot-docker-demo.git'
+                echo '🔄 Checking out source code...'
+                checkout scm
             }
         }
+
         stage('Build with Maven') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                echo '📦 Running Maven clean package...'
+                sh 'mvn clean package -DskipTests=false'
             }
         }
-        stage('Run Tests') {
-            steps {
-                sh 'mvn test'
-            }
-        }
+
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t springboot-docker-demo:latest .'
-                }
+                echo "🐳 Building Docker image: ${env.DOCKER_IMAGE}"
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
+
+        stage('Push to Docker Registry (optional)') {
+            when {
+                expression { return false } // Change to true if you plan to push images
+            }
+            steps {
+                echo "📤 Pushing image to registry (placeholder)..."
+                // Example: sh 'docker push my-registry/${DOCKER_IMAGE}'
+            }
+        }
+
         stage('Run Docker Container') {
             steps {
-                script {
-                    sh 'docker run -d -p 8080:8080 springboot-docker-demo:latest'
-                }
+                echo '🚀 Running Docker container...'
+                sh '''
+                    docker rm -f springboot-demo || true
+                    docker run -d -p 9000:8080 --name springboot-demo springboot-docker-demo:latest
+                '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed!'
+        }
+        always {
+            echo '📋 Pipeline finished.'
         }
     }
 }
