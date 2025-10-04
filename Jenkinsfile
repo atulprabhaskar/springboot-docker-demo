@@ -1,51 +1,39 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = 'springboot-docker-demo'
-        IMAGE_TAG = 'latest'
-        DOCKER_REGISTRY = 'localhost:5000' // use Nexus Docker registry or DockerHub
+    tools {
+        maven 'Maven3'   // Make sure Maven3 is installed in Jenkins (Manage Jenkins → Global Tool Config)
+        jdk 'JDK17'      // Ensure JDK 17 is configured in Jenkins (same place)
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/atulprabhaskar/springboot-docker-demo.git', branch: 'main'
+                git branch: 'main', url: 'https://github.com/atulprabhaskar/springboot-docker-demo.git'
             }
         }
-
-        stage('Build Maven Project') {
+        stage('Build with Maven') {
             steps {
-                sh './mvnw clean package -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
-
+        stage('Run Tests') {
+            steps {
+                sh 'mvn test'
+            }
+        }
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                    sh 'docker build -t springboot-docker-demo:latest .'
                 }
             }
         }
-
-        stage('Push to Docker Registry') {
-            when {
-                expression { return DOCKER_REGISTRY != '' }
-            }
+        stage('Run Docker Container') {
             steps {
                 script {
-                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh 'docker run -d -p 8080:8080 springboot-docker-demo:latest'
                 }
-            }
-        }
-
-        stage('Deploy (Optional)') {
-            steps {
-                sh '''
-                docker rm -f springboot-app || true
-                docker run -d --name springboot-app -p 8080:8080 ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                '''
             }
         }
     }
