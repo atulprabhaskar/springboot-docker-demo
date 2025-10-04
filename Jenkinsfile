@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker' } // This is the label of your Docker VM agent
+    agent { label 'Docker VM - Node' } // This is the label of your Docker VM agent
 
     environment {
         DOCKER_IMAGE = 'springboot-docker-demo:latest'
