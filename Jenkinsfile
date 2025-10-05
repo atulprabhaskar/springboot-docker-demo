@@ -1,5 +1,5 @@
 pipeline {
-    agent any // This is the label of your Docker VM agent
+    agent any
 
     environment {
         DOCKER_IMAGE = 'springboot-docker-demo:latest'
@@ -7,7 +7,6 @@ pipeline {
 
     options {
         timestamps()
-        // removed ansiColor from here
     }
 
     stages {
@@ -22,18 +21,14 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 echo '📦 Running Maven clean package...'
-                ansiColor('xterm') {
-                    sh 'mvn clean package -DskipTests=false'
-                }
+                sh 'mvn clean package -DskipTests=false'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo "🐳 Building Docker image: ${env.DOCKER_IMAGE}"
-                ansiColor('xterm') {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
-                }
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
@@ -50,12 +45,10 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 echo '🚀 Running Docker container...'
-                ansiColor('xterm') {
-                    sh '''
-                        docker rm -f springboot-demo || true
-                        docker run -d -p 9000:8080 --name springboot-demo springboot-docker-demo:latest
-                    '''
-                }
+                sh '''
+                    docker rm -f springboot-demo || true
+                    docker run -d -p 9000:8080 --name springboot-demo springboot-docker-demo:latest
+                '''
             }
         }
     }
@@ -69,6 +62,3 @@ pipeline {
         }
         always {
             echo '📋 Pipeline finished.'
-        }
-    }
-}
