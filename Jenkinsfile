@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
+        DOCKER_HOST = 'tcp://192.168.56.113:2375'
         DOCKER_IMAGE = 'springboot-docker-demo:latest'
+        CONTAINER_NAME = 'springboot-demo'
     }
 
     options {
@@ -10,7 +12,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout Code') {
             steps {
                 echo '🔄 Checking out source code...'
@@ -27,28 +28,36 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo "🐳 Building Docker image: ${env.DOCKER_IMAGE}"
-                sh "docker build -t ${DOCKER_IMAGE} ."
-            }
-        }
-
-        stage('Push to Docker Registry (optional)') {
-            when {
-                expression { return false } // Change to true if you plan to push images
-            }
-            steps {
-                echo "📤 Pushing image to registry (placeholder)..."
-                // Example: sh 'docker push my-registry/${DOCKER_IMAGE}'
+                echo '🐳 Building Docker image on remote host...'
+                script {
+                    docker.withServer("${DOCKER_HOST}") {
+                        sh "docker build -t ${DOCKER_IMAGE} ."
+                    }
+                }
             }
         }
 
         stage('Run Docker Container') {
             steps {
-                echo '🚀 Running Docker container...'
-                sh '''
-                    docker rm -f springboot-demo || true
-                    docker run -d -p 9000:8080 --name springboot-demo springboot-docker-demo:latest
-                '''
+                echo '🚀 Running Docker container on remote host...'
+                script {
+                    docker.withServer("${DOCKER_HOST}") {
+                        sh """
+                            docker rm -f ${CONTAINER_NAME} || true
+                            docker run -d -p 9000:8080 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Push to Docker Registry (optional)') {
+            when {
+                expression { return false } // enable later if pushing images
+            }
+            steps {
+                echo "📤 Pushing image to registry (placeholder)..."
+                // Example: sh "docker push my-registry/${DOCKER_IMAGE}"
             }
         }
     }
